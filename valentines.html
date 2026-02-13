@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Will You Be My Valentine? 💕</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0; padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        :root {
+            --rose: #FF6B9D; --blush: #FFC2D4;
+            --wine: #C73866; --gold: #FFD700;
+        }
+        html, body { width: 100%; height: 100%; overflow-x: hidden; }
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #FFE5EC 0%, #FFC2D4 50%, #FFB3C6 100%);
+            min-height: 100vh; min-height: 100dvh;
+        }
+
+        /* ── Opening ── */
+        #opening-scene {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 1000;
+            background: linear-gradient(135deg, #FFE5EC 0%, #FFC2D4 50%, #FFB3C6 100%);
+            transition: opacity 1s ease; padding: 20px;
+        }
+        #opening-scene.hidden { opacity: 0; pointer-events: none; }
+
+        .heart-svg {
+            width: min(200px, 50vw); height: min(200px, 50vw);
+            filter: drop-shadow(0 15px 40px rgba(199,56,102,0.4));
+            animation: heartPulse 2s ease-in-out both;
+        }
+        @keyframes heartPulse {
+            0%   { transform: scale(0); opacity: 0; }
+            50%  { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .expanding-text {
+            margin-top: clamp(28px, 6vw, 60px);
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(18px, 5vw, 28px); font-weight: 700;
+            color: var(--wine); text-align: center;
+            animation: expandText 3s ease-out forwards;
+            animation-delay: 1.5s; opacity: 0;
+            text-shadow: 2px 2px 4px rgba(199,56,102,0.2); padding: 0 10px;
+        }
+        @keyframes expandText {
+            0%   { opacity: 0; transform: scale(0.5); letter-spacing: -5px; }
+            50%  { opacity: 1; transform: scale(1.3); letter-spacing: 6px; }
+            100% { opacity: 1; transform: scale(1);   letter-spacing: 2px; }
+        }
+
+        .tap-hint {
+            margin-top: 28px; font-size: clamp(13px, 3.5vw, 16px);
+            color: var(--wine); opacity: 0;
+            animation: fadeHint 1s ease forwards; animation-delay: 5s;
+        }
+        @keyframes fadeHint { to { opacity: 0.6; } }
+
+        /* ── Firework particles ── */
+        .fp {
+            position: fixed; width: 7px; height: 7px;
+            border-radius: 50%; pointer-events: none;
+        }
+
+        /* ── Game ── */
+        #game-content {
+            display: none; min-height: 100vh; min-height: 100dvh;
+            padding: clamp(16px,4vw,40px) clamp(12px,4vw,20px);
+            justify-content: center; align-items: center;
+        }
+        #game-content.active { display: flex; }
+
+        .game-container {
+            width: 100%; max-width: 560px;
+            background: rgba(255,255,255,0.95); border-radius: 28px;
+            padding: clamp(28px,7vw,60px) clamp(20px,6vw,40px);
+            box-shadow: 0 20px 80px rgba(199,56,102,0.3);
+            text-align: center; border: 3px solid var(--blush);
+        }
+
+        .monologue-text {
+            font-size: clamp(17px,4.5vw,22px); color: #333;
+            line-height: 1.8; margin-bottom: clamp(24px,6vw,40px); font-weight: 500;
+        }
+
+        .question-text {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(22px,6vw,38px); font-weight: 900;
+            color: var(--wine); margin-bottom: clamp(28px,6vw,48px);
+            animation: questionPulse 2s ease-in-out infinite; line-height: 1.3;
+        }
+        @keyframes questionPulse {
+            0%,100% { transform: scale(1); }
+            50%     { transform: scale(1.04); }
+        }
+
+        .button-container {
+            display: flex; flex-direction: column;
+            gap: 16px; align-items: center;
+            position: relative; min-height: 60px;
+        }
+
+        .btn {
+            padding: clamp(14px,3.5vw,18px) clamp(28px,7vw,44px);
+            font-size: clamp(17px,4.5vw,21px); font-weight: 700;
+            border: none; border-radius: 50px; cursor: pointer;
+            font-family: 'Quicksand', sans-serif;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            user-select: none; touch-action: manipulation;
+        }
+        .btn-yes {
+            background: linear-gradient(135deg, var(--rose), var(--wine));
+            color: white; transform-origin: center;
+            transition: transform 0.4s ease, box-shadow 0.3s ease;
+            position: relative; z-index: 2;
+        }
+        .btn-yes:active { box-shadow: 0 4px 10px rgba(199,56,102,0.3); }
+
+        .btn-no {
+            background: linear-gradient(135deg, #E0E0E0, #B0B0B0);
+            color: #666;
+            transition: opacity 0.3s ease;
+        }
+        /* When JS makes it escape, it goes fixed */
+        .btn-no.escaped {
+            position: fixed; z-index: 999;
+            transition: top 0.2s ease, left 0.2s ease, transform 0.2s ease, opacity 0.3s ease;
+        }
+
+        .continue-btn {
+            background: linear-gradient(135deg, var(--blush), var(--rose));
+            color: white;
+            padding: clamp(14px,3.5vw,18px) clamp(36px,8vw,64px);
+            font-size: clamp(16px,4vw,19px);
+        }
+        .continue-btn:active { opacity: 0.85; }
+
+        /* ── Final ── */
+        #final-scene {
+            display: none; position: fixed; inset: 0;
+            justify-content: center; align-items: center;
+            background: linear-gradient(135deg, #FFE5EC 0%, #FFC2D4 50%, #FFB3C6 100%);
+            z-index: 2000; flex-direction: column;
+            padding: 30px 20px; text-align: center; overflow: hidden;
+        }
+        #final-scene.active { display: flex; animation: fadeIn 1s ease; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+        .final-heart-svg {
+            width: min(220px,55vw); height: min(220px,55vw);
+            filter: drop-shadow(0 20px 50px rgba(199,56,102,0.5));
+            animation: finalBeat 1.5s ease-in-out infinite;
+            margin-bottom: clamp(20px,5vw,40px);
+        }
+        @keyframes finalBeat {
+            0%,100% { transform: scale(1);    }
+            25%     { transform: scale(1.1);  }
+            75%     { transform: scale(1.05); }
+        }
+
+        .final-message {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(26px,7vw,52px); font-weight: 900;
+            color: var(--wine);
+            text-shadow: 3px 3px 6px rgba(199,56,102,0.2);
+            animation: textFloat 3s ease-in-out infinite;
+            max-width: 680px; line-height: 1.4;
+        }
+        @keyframes textFloat {
+            0%,100% { transform: translateY(0); }
+            50%     { transform: translateY(-10px); }
+        }
+
+        .sparkle {
+            position: fixed; width: 12px; height: 12px;
+            background: var(--gold); pointer-events: none;
+            clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+            animation: sparkleFloat 3s ease-in-out forwards;
+        }
+        @keyframes sparkleFloat {
+            0%   { transform: translateY(0) rotate(0deg);     opacity: 0; }
+            30%  { opacity: 1; }
+            100% { transform: translateY(-120px) rotate(360deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Opening -->
+<div id="opening-scene">
+    <svg class="heart-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#FF6B9D"/>
+                <stop offset="100%" stop-color="#C73866"/>
+            </linearGradient>
+        </defs>
+        <path fill="url(#hg)" d="M50 85 C50 85 5 55 5 28 C5 14 16 5 28 5 C36 5 44 10 50 18 C56 10 64 5 72 5 C84 5 95 14 95 28 C95 55 50 85 50 85Z"/>
+    </svg>
+    <div class="expanding-text">Something Special For You...</div>
+    <div class="tap-hint">Tap anywhere to continue 💕</div>
+</div>
+
+<!-- Game -->
+<div id="game-content">
+    <div class="game-container">
+        <div id="content-display"></div>
+    </div>
+</div>
+
+<!-- Final -->
+<div id="final-scene">
+    <svg class="final-heart-svg" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="hg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%"   stop-color="#FF6B9D"/>
+                <stop offset="100%" stop-color="#C73866"/>
+            </linearGradient>
+        </defs>
+        <path fill="url(#hg2)" d="M50 85 C50 85 5 55 5 28 C5 14 16 5 28 5 C36 5 44 10 50 18 C56 10 64 5 72 5 C84 5 95 14 95 28 C95 55 50 85 50 85Z"/>
+    </svg>
+    <div class="final-message">I knew you'd say yes! 💕<br>Happy Valentine's Day! ✨</div>
+</div>
+
+<script>
+    let currentMonologue = 0;
+    let noClickCount     = 0;
+    let fireworkTimer    = null;
+    let skipped          = false;
+
+    const monologues = [
+        "Hey… I've been thinking about this for a while now... 🥺",
+        "Every time I see you, my heart skips a beat… 💓",
+        "You make every single day brighter just by being in it. ☀️",
+        "I can't imagine going through life without you by my side…",
+        "So… I have something very important to ask you. 💌"
+    ];
+
+    /* ── Fireworks ── */
+    function burst(x, y) {
+        const colors = ['#FF6B9D','#FFD700','#FFC2D4','#FF1493','#FF69B4','#fff'];
+        const color  = colors[Math.floor(Math.random() * colors.length)];
+        const by     = Math.max(60, y - window.innerHeight * 0.4);
+        for (let i = 0; i < 26; i++) {
+            const p = document.createElement('div');
+            p.className = 'fp';
+            p.style.cssText = `left:${x}px;top:${by}px;background:${color};transition:none;opacity:1`;
+            document.body.appendChild(p);
+            const angle = (Math.PI * 2 * i) / 26;
+            const vel   = 60 + Math.random() * 90;
+            const tx    = Math.cos(angle) * vel;
+            const ty    = Math.sin(angle) * vel;
+            const dur   = 0.7 + Math.random() * 0.5;
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                p.style.transition = `transform ${dur}s ease-out, opacity ${dur}s ease-out`;
+                p.style.transform  = `translate(${tx}px,${ty}px) scale(0.1)`;
+                p.style.opacity    = '0';
+            }));
+            setTimeout(() => p.remove(), dur * 1000 + 150);
+        }
+    }
+
+    function launchFireworks() {
+        let count = 0;
+        fireworkTimer = setInterval(() => {
+            burst(Math.random() * window.innerWidth, window.innerHeight);
+            if (++count >= 14) { clearInterval(fireworkTimer); goToGame(); }
+        }, 350);
+    }
+
+    /* ── Transitions ── */
+    function goToGame() {
+        document.getElementById('opening-scene').classList.add('hidden');
+        setTimeout(() => {
+            document.getElementById('game-content').classList.add('active');
+            showMonologue();
+        }, 900);
+    }
+
+    /* ── Monologue ── */
+    function showMonologue() {
+        const display = document.getElementById('content-display');
+        if (currentMonologue < monologues.length) {
+            display.innerHTML = `
+                <div class="monologue-text">${monologues[currentMonologue]}</div>
+                <button class="btn continue-btn" id="continueBtn">Continue… 💬</button>`;
+            const btn = document.getElementById('continueBtn');
+            btn.addEventListener('click',    nextMonologue);
+            btn.addEventListener('touchend', e => { e.preventDefault(); nextMonologue(); });
+        } else {
+            showQuestion();
+        }
+    }
+    function nextMonologue() { currentMonologue++; showMonologue(); }
+
+    /* ── Question ── */
+    function showQuestion() {
+        const display = document.getElementById('content-display');
+        display.innerHTML = `
+            <div class="question-text">Will You Be My Valentine? 💝</div>
+            <div class="button-container" id="btnContainer">
+                <button class="btn btn-yes" id="yesBtn">Yes! 💕</button>
+                <button class="btn btn-no"  id="noBtn">No 😬</button>
+            </div>`;
+
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn  = document.getElementById('noBtn');
+
+        yesBtn.addEventListener('click',    sayYes);
+        yesBtn.addEventListener('touchend', e => { e.preventDefault(); sayYes(); });
+
+        noBtn.addEventListener('mouseover', () => escapeNo());
+        noBtn.addEventListener('click',     () => escapeNo());
+        noBtn.addEventListener('touchstart',() => escapeNo(), { passive: true });
+    }
+
+    function escapeNo() {
+        const noBtn  = document.getElementById('noBtn');
+        const yesBtn = document.getElementById('yesBtn');
+        if (!noBtn || !yesBtn) return;
+        noClickCount++;
+
+        // Pick a spot that keeps the button fully on-screen
+        const bw  = noBtn.offsetWidth  || 110;
+        const bh  = noBtn.offsetHeight || 52;
+        const pad = 14;
+        const rx  = pad + Math.random() * (window.innerWidth  - bw  - pad * 2);
+        const ry  = pad + Math.random() * (window.innerHeight - bh  - pad * 2);
+
+        noBtn.classList.add('escaped');
+        noBtn.style.left = rx + 'px';
+        noBtn.style.top  = ry + 'px';
+
+        // Shrink No
+        const shrink = noClickCount > 3
+            ? Math.max(0.2, 1 - (noClickCount - 3) * 0.13) : 1;
+        noBtn.style.transform = `scale(${shrink})`;
+        noBtn.style.opacity   = String(Math.max(0.2, shrink));
+
+        // Grow Yes
+        const grow = Math.min(1 + noClickCount * 0.18, 3);
+        yesBtn.style.transform = `scale(${grow})`;
+    }
+
+    /* ── Yes! ── */
+    function sayYes() {
+        const nb = document.getElementById('noBtn');
+        if (nb) nb.remove();
+        document.getElementById('final-scene').classList.add('active');
+        for (let i = 0; i < 30; i++) {
+            setTimeout(() => {
+                const s = document.createElement('div');
+                s.className = 'sparkle';
+                s.style.left           = Math.random() * window.innerWidth  + 'px';
+                s.style.top            = Math.random() * window.innerHeight + 'px';
+                s.style.animationDelay = Math.random() * 1.5 + 's';
+                document.body.appendChild(s);
+                setTimeout(() => s.remove(), 3500);
+            }, i * 80);
+        }
+    }
+
+    /* ── Boot ── */
+    function skipIntro() {
+        if (skipped) return; skipped = true;
+        clearInterval(fireworkTimer); goToGame();
+    }
+
+    const openingEl = document.getElementById('opening-scene');
+    openingEl.addEventListener('click',    skipIntro);
+    openingEl.addEventListener('touchend', e => { e.preventDefault(); skipIntro(); });
+
+    // Auto-fire after animations (~4.5 s)
+    setTimeout(() => { if (!skipped) launchFireworks(); }, 4500);
+</script>
+</body>
+</html>
